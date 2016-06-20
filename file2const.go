@@ -73,9 +73,15 @@ func main() {
 
 	values := make([]ast.Spec, len(inputFiles))
 	for i, input := range inputFiles {
+		var quoted string
+		if strings.Contains(input.contents, "`") {
+			quoted = strconv.Quote(input.contents)
+		} else {
+			quoted = "`" + input.contents + "`"
+		}
 		values[i] = &ast.ValueSpec{
 			Names:  []*ast.Ident{&ast.Ident{Name: input.constantName}},
-			Values: []ast.Expr{&ast.BasicLit{Kind: token.STRING, Value: strconv.Quote(input.contents)}},
+			Values: []ast.Expr{&ast.BasicLit{Kind: token.STRING, Value: quoted}},
 		}
 	}
 	f := &ast.File{

@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"unicode"
 )
 
 type inputFile struct {
@@ -60,6 +61,14 @@ func parseFlags() error {
 	return nil
 }
 
+func ValueToLiteral(value string) string {
+	if strings.Contains(value, "`") || strings.IndexFunc(value, func(r rune) bool { return !unicode.IsGraphic(r) && r != '\n' }) != -1 {
+		return strconv.Quote(value)
+	} else {
+		return "`" + value + "`"
+	}
+}
+
 func main() {
 	err := parseFlags()
 	if err != nil {
@@ -73,15 +82,9 @@ func main() {
 
 	values := make([]ast.Spec, len(inputFiles))
 	for i, input := range inputFiles {
-		var quoted string
-		if strings.Contains(input.contents, "`") {
-			quoted = strconv.Quote(input.contents)
-		} else {
-			quoted = "`" + input.contents + "`"
-		}
 		values[i] = &ast.ValueSpec{
 			Names:  []*ast.Ident{&ast.Ident{Name: input.constantName}},
-			Values: []ast.Expr{&ast.BasicLit{Kind: token.STRING, Value: quoted}},
+			Values: []ast.Expr{&ast.BasicLit{Kind: token.STRING, Value: ValueToLiteral(input.contents)}},
 		}
 	}
 	f := &ast.File{
